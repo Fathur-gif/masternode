@@ -6,6 +6,8 @@ int soilMoisturePin_2 = A1;
 int sensorValue_2 = 0;
 int soilMoisturePin_3 = A2;
 int sensorValue_3 = 0;
+int soilTemperature = A3;
+int sensorValue_4 = 0;
 
 
 void setup() {
@@ -18,6 +20,7 @@ void loop() {
   sensorValue_1 = analogRead(soilMoisturePin_1);
   sensorValue_2 = analogRead(soilMoisturePin_2);
   sensorValue_3 = analogRead(soilMoisturePin_3);
+  sensorValue_4 = analogRead(soilTemperature);
 
   // Mengubah nilai ke rentang yang lebih sesuai, misalnya 0-100 persen
   //int moisturePercent = map(sensorValue_1, 0, 4095, 0, 100);
@@ -33,6 +36,8 @@ void loop() {
   Serial.print("Soil Moisture Level 3: ");
   Serial.println(sensorValue_3);
   //Serial.println("%");
+  Serial.print("Soil Temperature: ");
+  Serial.println(sensorValue_4);
   Serial.println("-------------------------------");
 
   // Tunggu 1 detik sebelum pembacaan berikutnya

@@ -8,7 +8,7 @@ void setup() {
 
   // Inisialisasi LoRa
   LoRa.setPins(5, 14, 26);  // NSS, RST, DIO0
-  if (!LoRa.begin(915E6)) {  // Sesuaikan frekuensi dengan transmitter (misalnya 433E6 atau 868E6)
+  if (!LoRa.begin(920E6)) {  // Sesuaikan frekuensi dengan transmitter (misalnya 433E6 atau 868E6)
     Serial.println("Gagal menginisialisasi LoRa");
     while (1);
   }

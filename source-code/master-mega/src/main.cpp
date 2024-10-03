@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include <SPI.h>
+#include <LoRa.h>
 
 int soilMoisturePin_1 = A0;  
 int sensorValue_1 = 0;
@@ -13,6 +15,13 @@ int sensorValue_4 = 0;
 void setup() {
   // Inisialisasi komunikasi serial
   Serial.begin(9600);
+
+  LoRa.setPins(10, 9, 2);  // NSS, RST, DIO0
+  if (!LoRa.begin(920E6)) {  // Sesuaikan frekuensi 920 MHz atau sesuai kebutuhan
+    Serial.println("Gagal menginisialisasi LoRa");
+    while (1);
+  }
+  Serial.println("LoRa siap!");
 }
 
 void loop() {
@@ -40,6 +49,18 @@ void loop() {
   Serial.println(sensorValue_4);
   Serial.println("-------------------------------");
 
+  // Buat string data untuk dikirimkan melalui LoRa
+  String data = String(sensorValue_1) + "," + 
+                String(sensorValue_2) + "," + 
+                String(sensorValue_3) + "," + 
+                String(sensorValue_4);
+
+  // Kirim data melalui LoRa
+  LoRa.beginPacket();
+  LoRa.print(data);
+  LoRa.endPacket();
+
+  Serial.println("Data dikirim: " + data);  
   // Tunggu 1 detik sebelum pembacaan berikutnya
   delay(1000);
 }

@@ -4,14 +4,15 @@
 #include <LoRa.h>
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   // Inisialisasi LoRa
-  LoRa.setPins(5, 14, 26);  // NSS, RST, DIO0
+  LoRa.setPins(5, 14, 2);  // NSS, RST, DIO0
   if (!LoRa.begin(920E6)) {  // Sesuaikan frekuensi dengan transmitter (misalnya 433E6 atau 868E6)
     Serial.println("Gagal menginisialisasi LoRa");
     while (1);
   }
+  LoRa.setSyncWord(0xF3);
   Serial.println("LoRa receiver siap!");
 }
 

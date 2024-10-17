@@ -1,40 +1,32 @@
 #include <Arduino.h>
 #include <SPI.h>
-#include <SoftwareSerial.h>
-//#include <LoRa.h>
 
 // Pin untuk sensor soil moisture dan suhu
 int soilMoisturePin = A0;  // A0 (untuk RK520-01 Moisture)
-int soilTemperature = A1;    // A1 (untuk RK520-01 Temperature)
+int soilTemperature = A1;  // A1 (untuk RK520-01 Temperature)
 
 int sensorValue_1 = 0;
 int sensorValue_2 = 0;
 
-#define RS485_RX 19  // Pin untuk RX RS485
-#define RS485_TX 18  // Pin untuk TX RS485
-
-SoftwareSerial RS485Serial(RS485_RX, RS485_TX);
+// RS485 Communication setup
+const int RS485_DIR = 8;  // Pin for RS485 DE/RE control
 
 void setup() {
   // Inisialisasi komunikasi serial
-  Serial.begin(115200);
-  RS485Serial.begin(9600);
+  Serial.begin(9600);
+  Serial1.begin(9600); // RS485 communication on pins 19 (RX) and 18 (TX)
 
-  Serial.println("Inisialisasi sensor...");
-  // Inisialisasi LoRa
-  //LoRa.setPins(10, 9, 2);  // NSS, RST, DIO0
-  //while (!LoRa.begin(920E6)) {
-  //  Serial.println(".");
-  //  delay(500);
-  //}
-  //LoRa.setSyncWord(0xF3);
-  //Serial.println("LoRa siap!");
+  // Set RS485 direction pin
+  pinMode(RS485_DIR, OUTPUT);
+  digitalWrite(RS485_DIR, LOW);  // Receiver mode
+  
+  Serial.println("Starting...");
 }
 
 void loop() {
   // Membaca nilai analog dari sensor kelembaban tanah dan suhu
   sensorValue_1 = analogRead(soilMoisturePin);  // RK520-01 Moisture
-  sensorValue_2 = analogRead(soilTemperature);    // RK520-01 Temperature
+  sensorValue_2 = analogRead(soilTemperature);  // RK520-01 Temperature
 
   // Tampilkan nilai kelembaban tanah dan suhu ke serial monitor
   Serial.print("Soil Moisture Level: ");
@@ -42,28 +34,36 @@ void loop() {
 
   Serial.print("Soil Temperature: ");
   Serial.println(sensorValue_2);
+
+  // Reading data from XY-MD02 over RS485
+  String xy_md02_data = readXYMD02();
+  Serial.print("XY-MD02 Data: ");
+  Serial.println(xy_md02_data);
+  
   Serial.println("-------------------------------");
 
-  if (RS485Serial.available()) {
-    while (RS485Serial.available()) {
-      char c = RS485Serial.read();
-      Serial.write(c); // Kirim ke Serial Monitor
-    }
-  }
-
-  // Buat string data untuk dikirimkan melalui LoRa
-  //String data = String(sensorValue_1) + "," + 
-  //              String(sensorValue_2) + "," + 
-  //              String(sensorValue_3) + "," + 
-  //              String(sensorValue_4);
-
-  // Kirim data melalui LoRa
-  //LoRa.beginPacket();
-  //LoRa.print(data);
-  //LoRa.endPacket();
-
-  //Serial.println("Data dikirim: " + data);  
-
-  // Tunggu 1 detik sebelum pembacaan berikutnya
   delay(1000);
+}
+
+String readXYMD02() {
+  // Send request to XY-MD02
+  digitalWrite(RS485_DIR, HIGH);  // Enable RS485 write mode
+  Serial1.write(0x01);  // Modify with XY-MD02 specific command
+  Serial1.write(0x03);  // Example function code for reading registers
+  Serial1.write(0x00);  // Register address high byte
+  Serial1.write(0x00);  // Register address low byte
+  Serial1.write(0x00);  // Register count high byte
+  Serial1.write(0x01);  // Register count low byte
+  Serial1.write(0x84);  // CRC high byte (adjust as needed)
+  Serial1.write(0x0A);  // CRC low byte (adjust as needed)
+  digitalWrite(RS485_DIR, LOW);  // Set RS485 to read mode
+
+  // Read response
+  delay(100);  // Wait for sensor response
+  String response = "";
+  while (Serial1.available()) {
+    response += char(Serial1.read());
+  }
+  
+  return response;
 }

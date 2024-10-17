@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <SPI.h>
+#include <SoftwareSerial.h>
 //#include <LoRa.h>
 
 // Pin untuk sensor soil moisture dan suhu
@@ -9,11 +10,17 @@ int soilTemperature = A1;    // A1 (untuk RK520-01 Temperature)
 int sensorValue_1 = 0;
 int sensorValue_2 = 0;
 
+#define RS485_RX 19  // Pin untuk RX RS485
+#define RS485_TX 18  // Pin untuk TX RS485
+
+SoftwareSerial RS485Serial(RS485_RX, RS485_TX);
 
 void setup() {
   // Inisialisasi komunikasi serial
   Serial.begin(115200);
+  RS485Serial.begin(9600);
 
+  Serial.println("Inisialisasi sensor...");
   // Inisialisasi LoRa
   //LoRa.setPins(10, 9, 2);  // NSS, RST, DIO0
   //while (!LoRa.begin(920E6)) {
@@ -36,6 +43,13 @@ void loop() {
   Serial.print("Soil Temperature: ");
   Serial.println(sensorValue_2);
   Serial.println("-------------------------------");
+
+  if (RS485Serial.available()) {
+    while (RS485Serial.available()) {
+      char c = RS485Serial.read();
+      Serial.write(c); // Kirim ke Serial Monitor
+    }
+  }
 
   // Buat string data untuk dikirimkan melalui LoRa
   //String data = String(sensorValue_1) + "," + 

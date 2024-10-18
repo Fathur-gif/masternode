@@ -12,15 +12,20 @@ int sensorValue_2 = 0;
 const int RS485_DIR = 8;  // Pin for RS485 DE/RE control
 
 void setup() {
-  // Inisialisasi komunikasi serial
-  Serial.begin(9600);
-  Serial1.begin(9600); // RS485 communication on pins 19 (RX) and 18 (TX)
+  // Initialize communication
+  Serial.begin(9600);  // For monitoring
+  Serial1.begin(9600); // RS485
 
-  // Set RS485 direction pin
+  // RS485 direction control
   pinMode(RS485_DIR, OUTPUT);
-  digitalWrite(RS485_DIR, LOW);  // Receiver mode
-  
-  Serial.println("Starting...");
+  digitalWrite(RS485_DIR, LOW);  // Start in read mode
+
+  // Modbus node setup
+  node.begin(1, Serial1);  // Modbus address 1, using Serial1 for RS485
+  node.preTransmission(preTransmission);
+  node.postTransmission(postTransmission);
+
+  Serial.println("Modbus communication initialized.");
 }
 
 void loop() {
@@ -37,33 +42,12 @@ void loop() {
 
   // Reading data from XY-MD02 over RS485
   String xy_md02_data = readXYMD02();
-  Serial.print("XY-MD02 Data: ");
-  Serial.println(xy_md02_data);
-  
-  Serial.println("-------------------------------");
+    Serial.print("XY-MD02 Data: ");
+    Serial.println(data);
+  } else {
+    Serial.print("Modbus Error: ");
+    Serial.println(result, HEX);
+  }
 
   delay(1000);
-}
-
-String readXYMD02() {
-  // Send request to XY-MD02
-  digitalWrite(RS485_DIR, HIGH);  // Enable RS485 write mode
-  Serial1.write(0x01);  // Modify with XY-MD02 specific command
-  Serial1.write(0x03);  // Example function code for reading registers
-  Serial1.write(0x00);  // Register address high byte
-  Serial1.write(0x00);  // Register address low byte
-  Serial1.write(0x00);  // Register count high byte
-  Serial1.write(0x01);  // Register count low byte
-  Serial1.write(0x84);  // CRC high byte (adjust as needed)
-  Serial1.write(0x0A);  // CRC low byte (adjust as needed)
-  digitalWrite(RS485_DIR, LOW);  // Set RS485 to read mode
-
-  // Read response
-  delay(100);  // Wait for sensor response
-  String response = "";
-  while (Serial1.available()) {
-    response += char(Serial1.read());
-  }
-  
-  return response;
 }

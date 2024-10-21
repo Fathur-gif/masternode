@@ -1,32 +1,39 @@
-#include <Arduino.h>
-
+#include <arduino.h>
 #include <SPI.h>
 #include <LoRa.h>
 
+// Define pin mapping for LoRa with ESP32
+#define ss 5         // NSS pin
+#define rst 14       // RST pin
+#define dio0 26      // DIO0 pin
+
 void setup() {
-  Serial.begin(115200);
+  // Inisialisasi Serial Monitor
+  Serial.begin(9600);
+  while (!Serial);
+
+  Serial.println("LoRa Receiver (ESP32)");
 
   // Inisialisasi LoRa
-  LoRa.setPins(5, 14, 2);  // NSS, RST, DIO0
-  if (!LoRa.begin(920E6)) {  // Sesuaikan frekuensi dengan transmitter (misalnya 433E6 atau 868E6)
-    Serial.println("Gagal menginisialisasi LoRa");
+  LoRa.setPins(ss, rst, dio0);  // Atur pin NSS, RST, dan DIO0
+
+  if (!LoRa.begin(920E6)) {  // Sesuaikan frekuensi
+    Serial.println("Gagal memulai LoRa!");
     while (1);
   }
-  LoRa.setSyncWord(0xF3);
-  Serial.println("LoRa receiver siap!");
+  Serial.println("LoRa siap menerima pesan!");
 }
 
 void loop() {
-  // Cek apakah ada paket yang diterima
+  // Cek apakah ada data yang diterima
   int packetSize = LoRa.parsePacket();
   if (packetSize) {
-    // Baca data yang diterima
-    String receivedData = "";
+    // Jika ada data, tampilkan di Serial Monitor
+    Serial.print("Pesan diterima: ");
     while (LoRa.available()) {
-      receivedData += (char)LoRa.read();
+      String message = LoRa.readString();
+      Serial.print(message);
     }
-
-    // Tampilkan data di Serial Monitor
-    Serial.println("Data diterima: " + receivedData);
+    Serial.println();
   }
 }

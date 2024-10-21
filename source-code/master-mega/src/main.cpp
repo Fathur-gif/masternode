@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <SPI.h>
+#include <ModbusMaster.h>
 
 // Pin untuk sensor soil moisture dan suhu
 int soilMoisturePin = A0;  // A0 (untuk RK520-01 Moisture)
@@ -29,6 +30,10 @@ void setup() {
 }
 
 void loop() {
+  uint8_t result;
+  uint16_t data;
+
+  result = node.readHoldingRegisters(0x0000, 1);
   // Membaca nilai analog dari sensor kelembaban tanah dan suhu
   sensorValue_1 = analogRead(soilMoisturePin);  // RK520-01 Moisture
   sensorValue_2 = analogRead(soilTemperature);  // RK520-01 Temperature
@@ -41,7 +46,8 @@ void loop() {
   Serial.println(sensorValue_2);
 
   // Reading data from XY-MD02 over RS485
-  String xy_md02_data = readXYMD02();
+  if (result == node.ku8MBSuccess) {
+    data = node.getResponseBuffer(0x00);  // Get the first register response
     Serial.print("XY-MD02 Data: ");
     Serial.println(data);
   } else {

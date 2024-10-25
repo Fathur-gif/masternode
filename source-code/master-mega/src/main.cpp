@@ -1,64 +1,33 @@
 #include <Arduino.h>
 #include <SPI.h>
-#include <LoRa.h>
+#include <SoftwareSerial.h>
 
-// Pin untuk sensor soil moisture dan suhu
-int soilMoisturePin = A0;  // A0 (untuk RK520-01 Moisture)
-int soilTemperature = A1;  // A1 (untuk RK520-01 Temperature)
-
-int sensorValue_1 = 0;
-int sensorValue_2 = 0;
-
-// Define pin mapping
-#define ss 10         // NSS pin
-#define rst 7         // RST pin
-#define dio0 2        // DIO0 pin
-
-
+#define RX_PIN 19
+#define TX_PIN 18
+#define DE_RE_PIN 8  // Pin untuk mengontrol DE dan RE
 
 void setup() {
-  // Initialize communication
-  Serial.begin(9600);  // For monitoring
-  while (!Serial);
-
-  Serial.println("LoRa Transmitter");
-
-  // Inisialisasi LoRa dengan pin yang ditentukan
-  LoRa.setPins(ss, rst, dio0);
-
-  // Set frequency sesuai kebutuhan, 920 MHz untuk Indonesia
-  if (!LoRa.begin(920E6)) {
-    Serial.println("Gagal memulai LoRa!");
-    while (1);
-  }
-  Serial.println("LoRa siap!");
-
+  Serial.begin(9600);           // Untuk debugging
+  Serial1.begin(9600);          // UART pada ATmega2560
+  pinMode(DE_RE_PIN, OUTPUT);
 }
 
 void loop() {
+  // Mode Kirim
+  digitalWrite(DE_RE_PIN, HIGH);  // Aktifkan mode Transmitter
+  Serial1.write("Requesting data...\n");  // Kirim perintah ke sensor
+  delay(100);
 
+  // Mode Terima
+  digitalWrite(DE_RE_PIN, LOW);   // Aktifkan mode Receiver
+  delay(100);
 
-  // Membaca nilai analog dari sensor kelembaban tanah dan suhu
-  sensorValue_1 = analogRead(soilMoisturePin);  // RK520-01 Moisture
-  sensorValue_2 = analogRead(soilTemperature);  // RK520-01 Temperature
-
-  // Tampilkan nilai kelembaban tanah dan suhu ke serial monitor
-  Serial.print("Soil Moisture Level: ");
-  Serial.println(sensorValue_1);
-
-  Serial.print("Soil Temperature: ");
-  Serial.println(sensorValue_2);
-
-  // Mengirim data sensor melalui LoRa
-  Serial.println("Mengirim data sensor melalui LoRa...");
-
-  // Mulai mengirim paket LoRa
-  LoRa.beginPacket();
-  LoRa.print("Soil Moisture: ");
-  LoRa.print(sensorValue_1);
-  LoRa.print(", Soil Temperature: ");
-  LoRa.print(sensorValue_2);
-  LoRa.endPacket();
+  // Baca data dari sensor
+  while (Serial1.available()) {
+    int data = Serial1.read();
+    Serial.print("Data dari XY-MD02: ");
+    Serial.println(data);
+  }
 
   delay(1000);
 }

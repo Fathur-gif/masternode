@@ -1,32 +1,65 @@
 #include <Arduino.h>
 #include <SPI.h>
-#include <SoftwareSerial.h>
+#include <ModbusMaster.h>
 
-#define RX_PIN 19
-#define TX_PIN 18
-#define DE_RE_PIN 8  // Pin untuk mengontrol DE dan RE
+// RS485 Communication setup
+#define MAX485_DE      8
+#define MAX485_RE_NEG  9
+#define RX1 18
+#define TX1 19
+
+ModbusMaster node;
+
+uint8_t result;
+float temp, hum;
+void preTransmission()
+{
+  digitalWrite(MAX485_RE_NEG, 1);
+  digitalWrite(MAX485_DE, 1);
+}
+
+void postTransmission()
+{
+  digitalWrite(MAX485_RE_NEG, 0);
+  digitalWrite(MAX485_DE, 0);
+}
 
 void setup() {
-  Serial.begin(9600);           // Untuk debugging
-  Serial1.begin(9600);          // UART pada ATmega2560
-  pinMode(DE_RE_PIN, OUTPUT);
+
+  pinMode(MAX485_RE_NEG, OUTPUT);
+  pinMode(MAX485_DE, OUTPUT);
+  digitalWrite(MAX485_RE_NEG, 0);
+  digitalWrite(MAX485_DE, 0);
+  // Initialize communication
+  Serial.begin(9600);  // For monitoring
+  Serial1.begin(9600); // RS485
+
+  // RS485 direction control
+
+  // Modbus node setup
+  node.begin(1, Serial1);  // Modbus address 1, using Serial1 for RS485
+  node.preTransmission(preTransmission);
+  node.postTransmission(postTransmission);
+
+  Serial.println("Modbus communication initialized.");
 }
 
 void loop() {
-  // Mode Kirim
-  digitalWrite(DE_RE_PIN, HIGH);  // Aktifkan mode Transmitter
-  Serial1.write("Requesting data...\n");  // Kirim perintah ke sensor
-  delay(100);
+  uint8_t result;
+  uint16_t data;
 
-  // Mode Terima
-  digitalWrite(DE_RE_PIN, LOW);   // Aktifkan mode Receiver
-  delay(100);
+  result = node.readHoldingRegisters(0x0000, 1);
 
-  // Baca data dari sensor
-  while (Serial1.available()) {
-    int data = Serial1.read();
-    Serial.print("Data dari XY-MD02: ");
-    Serial.println(data);
+
+  // Reading data from XY-MD02 over RS485
+  if (result == node.ku8MBSuccess) {
+    temp = node.getResponseBuffer(0) / 10.0f;
+    hum = node.getResponseBuffer(1) / 10.0f;
+    //    Serial.print("Temp: "); Serial.print(temp); Serial.print("\t");
+    //    Serial.print("Hum: "); Serial.print(hum);
+    Serial.println();
+    node.clearResponseBuffer();
+    node.clearTransmitBuffer();
   }
 
   delay(1000);

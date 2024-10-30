@@ -1,7 +1,11 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <ModbusMaster.h>
+#include <LoRa.h>
 
+#define ss 10         // NSS pin
+#define rst 7         // RST pin
+#define dio0 2        // DIO0 pin
 #define RX1 19
 #define TX1 18 // RX, TX
 #define MAX485_DE 43
@@ -33,14 +37,24 @@ void setup() {
   digitalWrite(MAX485_RE_NEG, 0);
   digitalWrite(MAX485_DE, 0);
   Serial.println("start init serial 0");
+  
   Serial.begin(9600);
-
   while (!Serial) {
   Serial.println("loop for init serial 0");
   }
   Serial.println("start init software serial");
-  Serial1.begin(9600);
+  Serial.println("LoRa Transmitter");
+  
+  LoRa.setPins(ss, rst, dio0);
 
+  // Set frequency sesuai kebutuhan, 920 MHz untuk Indonesia
+  if (!LoRa.begin(920E6)) {
+    Serial.println("Gagal memulai LoRa!");
+    while (1);
+  }
+  Serial.println("LoRa siap!");
+
+  Serial1.begin(9600);
   while (!Serial1) {
   Serial.println("loop for init software serial");
   }
@@ -74,6 +88,20 @@ void loop() {
     Serial.println(node.getResponseBuffer(1)/10.0f);
     Serial.println();
   }
+  
+  Serial.println("Mengirim data sensor melalui LoRa...");
+
+  // Mulai mengirim paket LoRa
+  LoRa.beginPacket();
+  LoRa.print("Soil Moisture: ");
+  LoRa.print(sensorValue_1);
+  LoRa.print(", Soil Temperature: ");
+  LoRa.print(sensorValue_2);
+  LoRa.print(", Temp:  ");
+  LoRa.print(node.getResponseBuffer(0)/10.0f);
+  LoRa.print(", Humi: ");
+  LoRa.print(node.getResponseBuffer(1)/10.0f);
+  LoRa.endPacket();
 
   delay(2000);
 }

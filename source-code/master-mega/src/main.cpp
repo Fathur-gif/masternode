@@ -67,7 +67,7 @@ void loop() {
 
   uint8_t result;
   uint16_t data[2];
-  Serial.println("get data");
+  // Serial.println("get data");
   // Membaca nilai analog dari sensor kelembaban tanah dan suhu
   sensorValue_1 = analogRead(soilMoisturePin);  // RK520-01 Moisture
   // sensorValue_2 = analogRead(soilTemperature);  // RK520-01 Temperature
@@ -82,14 +82,14 @@ void loop() {
   result = node.readInputRegisters(1, 2);
   if (result == node.ku8MBSuccess)
   {
-    Serial.print("Temp: ");
-    Serial.println(node.getResponseBuffer(0)/10.0f);
-    Serial.print("Humi: ");
-    Serial.println(node.getResponseBuffer(1)/10.0f);
-    Serial.println();
+    // Serial.print("Temp: ");
+    // Serial.println(node.getResponseBuffer(0)/10.0f);
+    // Serial.print("Humi: ");
+    // Serial.println(node.getResponseBuffer(1)/10.0f);
+    // Serial.println();
   }
   
-  Serial.println("Mengirim data sensor melalui LoRa...");
+  // Serial.println("Mengirim data sensor melalui LoRa...");
 
   // Mulai mengirim paket LoRa
   LoRa.beginPacket();

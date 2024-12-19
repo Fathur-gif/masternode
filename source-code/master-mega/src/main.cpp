@@ -8,8 +8,8 @@
 #define dio0 2        // DIO0 pin
 #define RX1 19
 #define TX1 18 // RX, TX
-#define MAX485_DE 43
-#define MAX485_RE_NEG 42
+#define MAX485_DE 33
+#define MAX485_RE_NEG 31
 
 // Pin untuk sensor soil moisture dan suhu
 int soilMoisturePin = A0;  // A0 (untuk RK520-01 Moisture)

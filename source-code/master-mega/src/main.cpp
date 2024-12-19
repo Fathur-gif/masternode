@@ -13,7 +13,7 @@
 
 // Pin untuk sensor soil moisture dan suhu
 int soilMoisturePin = A0;  // A0 (untuk RK520-01 Moisture)
-int soilTemperature = A1;  // A1 (untuk RK520-01 Temperature)
+// int soilTemperature = A1;  // A1 (untuk RK520-01 Temperature)
 
 int sensorValue_1 = 0;
 int sensorValue_2 = 0;
@@ -70,14 +70,14 @@ void loop() {
   Serial.println("get data");
   // Membaca nilai analog dari sensor kelembaban tanah dan suhu
   sensorValue_1 = analogRead(soilMoisturePin);  // RK520-01 Moisture
-  sensorValue_2 = analogRead(soilTemperature);  // RK520-01 Temperature
+  // sensorValue_2 = analogRead(soilTemperature);  // RK520-01 Temperature
 
   // Tampilkan nilai kelembaban tanah dan suhu ke serial monitor
   Serial.print("Soil Moisture Level: ");
   Serial.println(sensorValue_1);
 
-  Serial.print("Soil Temperature: ");
-  Serial.println(sensorValue_2);
+  // Serial.print("Soil Temperature: ");
+  // Serial.println(sensorValue_2);
 
   result = node.readInputRegisters(1, 2);
   if (result == node.ku8MBSuccess)
@@ -93,13 +93,13 @@ void loop() {
 
   // Mulai mengirim paket LoRa
   LoRa.beginPacket();
-  LoRa.print("Soil Moisture: ");
+  // LoRa.print("Soil Moisture: ");
   LoRa.print(sensorValue_1);
-  LoRa.print(", Soil Temperature: ");
-  LoRa.print(sensorValue_2);
-  LoRa.print(", Temp:  ");
+  // LoRa.print(", Soil Temperature: ");
+  // LoRa.print(sensorValue_2);
+  // LoRa.print(", Temp:  ");
   LoRa.print(node.getResponseBuffer(0)/10.0f);
-  LoRa.print(", Humi: ");
+  // LoRa.print(", Humi: ");
   LoRa.print(node.getResponseBuffer(1)/10.0f);
   LoRa.endPacket();
 

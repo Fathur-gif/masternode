@@ -1,8 +1,16 @@
 #include <EEPROM.h>
 #include <Arduino.h>
 #include <SPI.h>
+#include <ModbusMaster.h>
+#include <LoRa.h>
 
-
+#define ss 10         // NSS pin
+#define rst 7         // RST pin
+#define dio0 2        // DIO0 pin
+#define RX1 19
+#define TX1 18 // RX, TX
+#define MAX485_DE 33
+#define MAX485_RE_NEG 31
 
 // Pin untuk sensor soil moisture dan suhu
 int soilMoisturePin = A0;  // A0 (untuk RK520-01 Moisture)
@@ -15,6 +23,15 @@ int sensorValue_2 = 0;
 int moistureThreshold;
 int temperatureThreshold;
 
+ModbusMaster node;
+void preTransmission() {
+  digitalWrite(MAX485_RE_NEG, 1);
+  digitalWrite(MAX485_DE, 1);
+}
+void postTransmission() {
+  digitalWrite(MAX485_RE_NEG, 0);
+  digitalWrite(MAX485_DE, 0);
+}
 
 // Fungsi untuk menyimpan integer (2 byte) ke EEPROM
 void EEPROMWriteInt(int address, int value) {
@@ -32,7 +49,33 @@ int EEPROMReadInt(int address) {
 }
 
 void setup() {
+  pinMode(MAX485_RE_NEG, OUTPUT);
+  pinMode(MAX485_DE, OUTPUT);
+  // Init in receive mode
+  digitalWrite(MAX485_RE_NEG, 0);
+  digitalWrite(MAX485_DE, 0);
+
   Serial.begin(9600);
+  while (!Serial); // Tunggu hingga Serial Monitor siap
+
+  Serial.println("LoRa Transmitter");
+  Serial.println("Ketik 'read [alamat]' untuk membaca data dari EEPROM");
+  Serial.println("Contoh: read 0");
+
+  LoRa.setPins(ss, rst, dio0);
+
+  // Set frequency sesuai kebutuhan, 920 MHz untuk Indonesia
+  if (!LoRa.begin(920E6)) {
+    Serial.println("Gagal memulai LoRa!");
+    while (1);
+  }
+  Serial.println("LoRa siap!");
+
+  Serial1.begin(9600);
+  node.begin(1, Serial1);
+  node.preTransmission(preTransmission);
+  node.postTransmission(postTransmission);
+
   // Baca threshold dari EEPROM
   moistureThreshold = EEPROMReadInt(0); // Lokasi 0 untuk moisture
   temperatureThreshold = EEPROMReadInt(2); // Lokasi 2 untuk temperature
@@ -48,9 +91,43 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("ini code baru");
+  uint8_t result;
+  uint16_t data[2];
 
+  // Membaca nilai analog dari sensor kelembaban tanah dan suhu
+  sensorValue_1 = analogRead(soilMoisturePin);  // RK520-01 Moisture
+  sensorValue_2 = analogRead(soilTemperature);  // RK520-01 Temperature
 
+  // Tampilkan nilai kelembaban tanah dan suhu ke serial monitor
+  Serial.print("Soil Moisture Level: ");
+  Serial.println(sensorValue_1);
+
+  Serial.print("Soil Temperature: ");
+  Serial.println(sensorValue_2);
+
+  // Baca data Modbus (contoh sensor tambahan)
+  result = node.readInputRegisters(1, 2);
+  if (result == node.ku8MBSuccess) {
+    Serial.print("Temp: ");
+    Serial.println(node.getResponseBuffer(0) / 10.0f);
+    Serial.print("Humi: ");
+    Serial.println(node.getResponseBuffer(1) / 10.0f);
+    Serial.println();
+  }
+
+  // Kirim data melalui LoRa
+  // LoRa.beginPacket();
+  // LoRa.print("Soil Moisture: ");
+  // LoRa.print(sensorValue_1);
+  // LoRa.print(", Soil Temperature: ");
+  // LoRa.print(sensorValue_2);
+  // LoRa.print(", Temp: ");
+  // LoRa.print(node.getResponseBuffer(0) / 10.0f);
+  // LoRa.print(", Humi: ");
+  // LoRa.print(node.getResponseBuffer(1) / 10.0f);
+  // LoRa.endPacket();
+
+  // Periksa perintah dari Serial Monitor
   if (Serial.available() > 0) {
     String input = Serial.readStringUntil('\n'); // Baca input hingga newline
     input.trim(); // Hapus karakter spasi atau newline berlebih
